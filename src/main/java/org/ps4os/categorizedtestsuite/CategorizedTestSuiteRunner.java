@@ -18,27 +18,48 @@
  */
 package org.ps4os.categorizedtestsuite;
 
+import org.apache.xbean.finder.AnnotationFinder;
+import org.apache.xbean.finder.ClassLoaders;
+import org.apache.xbean.finder.archive.ClasspathArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runner.Runner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerBuilder;
-import org.scannotation.AnnotationDB;
-import org.scannotation.ClasspathUrlFinder;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class CategorizedTestSuiteRunner extends Suite
 {
-    private static final Logger LOG = Logger.getLogger(CategorizedTestSuiteRunner.class.getName());
+    private static final Set<Class> ALL_CLASSES_WITH_TEST_ANNOTATIONS = new HashSet<>();
+    private static final AnnotationFinder ANNOTATION_FINDER;
+
+    static
+    {
+        ClassLoader classLoader = CategorizedTestSuiteRunner.class.getClassLoader();
+        try
+        {
+            Set<URL> urls = ClassLoaders.findUrls(classLoader);
+            ANNOTATION_FINDER = new AnnotationFinder(new ClasspathArchive(classLoader, urls));
+            for (Method method : ANNOTATION_FINDER.findAnnotatedMethods(Test.class))
+            {
+                ALL_CLASSES_WITH_TEST_ANNOTATIONS.add(method.getDeclaringClass());
+            }
+
+            ALL_CLASSES_WITH_TEST_ANNOTATIONS.addAll(ANNOTATION_FINDER.findAnnotatedClasses(RunWith.class));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     public CategorizedTestSuiteRunner(Class<?> clazz, RunnerBuilder builder) throws InitializationError
     {
@@ -82,60 +103,22 @@ public class CategorizedTestSuiteRunner extends Suite
 
         if (customTestCategoryAnnotation != null)
         {
-            AnnotationDB classScanner = createClassScanner(suiteClass, true, false);
-            processTestsWithCategory(customTestCategoryAnnotation, testClasses, suiteClass, classScanner);
+            Set<Class> candidateClasses = new HashSet<>();
+            candidateClasses.addAll(ANNOTATION_FINDER.findAnnotatedClasses(customTestCategoryAnnotation.annotationType()));
+            processTests(testClasses, suiteClass, candidateClasses);
         }
         else
         {
-            AnnotationDB classScanner = createClassScanner(suiteClass, false, true);
-            processAllTests(testClasses, suiteClass, classScanner);
+            processTests(testClasses, suiteClass, ALL_CLASSES_WITH_TEST_ANNOTATIONS);
         }
         return testClasses.toArray(new Class[testClasses.size()]);
     }
 
-    private static void processTestsWithCategory(Annotation customTestCategoryAnnotation, Set<Class> testClasses, Class<?> suiteClass, AnnotationDB classScanner)
+    private static void processTests(Set<Class> testClasses, Class<?> suiteClass, Set<Class> candidateClasses)
     {
-        Set<String> extractedResources = classScanner.getAnnotationIndex().get(customTestCategoryAnnotation.annotationType().getName());
-
-        if (extractedResources == null || extractedResources.isEmpty())
+        for (Class classToAdd : candidateClasses)
         {
-            return;
-        }
-
-        for (String className : extractedResources)
-        {
-            try
-            {
-                Class<?> classToAdd = Class.forName(className, false, Thread.currentThread().getContextClassLoader());
-                addClassIfNotRestricted(testClasses, suiteClass, classToAdd);
-            }
-            catch (Throwable t)
-            {
-                LOG.log(Level.SEVERE, "failed to process class " + className, t);
-            }
-        }
-    }
-
-    private static void processAllTests(Set<Class> testClasses, Class<?> suiteClass, AnnotationDB classScanner)
-    {
-        Set<String> extractedResources = classScanner.getAnnotationIndex().get(Test.class.getName());
-
-        if (extractedResources == null || extractedResources.isEmpty())
-        {
-            return;
-        }
-
-        for (String className : extractedResources)
-        {
-            try
-            {
-                Class<?> classToAdd = Class.forName(className, false, Thread.currentThread().getContextClassLoader());
-                addClassIfNotRestricted(testClasses, suiteClass, classToAdd);
-            }
-            catch (Throwable t)
-            {
-                LOG.log(Level.SEVERE, "failed to process class " + className, t);
-            }
+            addClassIfNotRestricted(testClasses, suiteClass, classToAdd);
         }
     }
 
@@ -163,40 +146,6 @@ public class CategorizedTestSuiteRunner extends Suite
                 testClasses.add(classToAdd);
             }
         }
-    }
-
-    private static AnnotationDB createClassScanner(Class<?> suiteClass, boolean typeScanning, boolean methodScanning)
-    {
-        AnnotationDB annotationDB = new AnnotationDB();
-
-        annotationDB.setScanFieldAnnotations(false);
-        annotationDB.setScanParameterAnnotations(false);
-
-        annotationDB.setScanClassAnnotations(typeScanning);
-        annotationDB.setScanMethodAnnotations(methodScanning);
-
-        try
-        {
-            annotationDB.scanArchives(ClasspathUrlFinder.findClassBase(suiteClass));
-        }
-        catch (IOException e)
-        {
-            LOG.log(Level.SEVERE, "failed to scan path", e);
-        }
-
-        for (URL classpathUrl : ClasspathUrlFinder.findClassPaths())
-        {
-            try
-            {
-                annotationDB.scanArchives(classpathUrl);
-            }
-            catch (IOException e)
-            {
-                LOG.log(Level.SEVERE, "failed to scan path", e);
-            }
-        }
-
-        return annotationDB;
     }
 
     private static boolean isRestrictedTestCategory(Class<?> classToAdd, SkipTestCategory skipTestCategoryAnnotation)
