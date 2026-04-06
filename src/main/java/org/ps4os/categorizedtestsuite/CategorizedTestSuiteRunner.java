@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.ps4os.categorizedtestsuite;
 
 import org.apache.xbean.finder.AnnotationFinder;
@@ -36,9 +37,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * JUnit 4 {@link Suite} runner that auto-discovers test classes on the classpath
+ * and filters them by custom {@link TestCategory} annotations, {@link TestsOfType}
+ * type constraints, and {@link SkipTestCategory} exclusions.
+ *
+ * <p>Annotate a suite class with {@code @RunWith(CategorizedTestSuiteRunner.class)}
+ * and optionally with a custom {@code @TestCategory} annotation, {@code @TestsOfType},
+ * or {@code @SkipTestCategory} to control which tests are included.</p>
+ */
 public class CategorizedTestSuiteRunner extends Suite
 {
-    private static final Set<Class> ALL_CLASSES_WITH_TEST_ANNOTATIONS = new HashSet<>();
+    private static final Set<Class<?>> ALL_CLASSES_WITH_TEST_ANNOTATIONS = new HashSet<>();
     private static final AnnotationFinder ANNOTATION_FINDER;
 
     static
@@ -61,6 +71,13 @@ public class CategorizedTestSuiteRunner extends Suite
         }
     }
 
+    /**
+     * Creates a new runner for the given suite class.
+     *
+     * @param clazz   the suite class annotated with {@code @RunWith(CategorizedTestSuiteRunner.class)}
+     * @param builder the runner builder provided by the JUnit framework
+     * @throws InitializationError if the suite cannot be constructed
+     */
     public CategorizedTestSuiteRunner(Class<?> clazz, RunnerBuilder builder) throws InitializationError
     {
         super(clazz, scanForTestClasses(clazz));
@@ -76,7 +93,8 @@ public class CategorizedTestSuiteRunner extends Suite
         super(clazz, suiteClasses);
     }
 
-    private CategorizedTestSuiteRunner(RunnerBuilder builder, Class<?> clazz, Class<?>[] suiteClasses) throws InitializationError
+    private CategorizedTestSuiteRunner(RunnerBuilder builder, Class<?> clazz, Class<?>[] suiteClasses)
+            throws InitializationError
     {
         super(builder, clazz, suiteClasses);
     }
@@ -86,7 +104,7 @@ public class CategorizedTestSuiteRunner extends Suite
         super(clazz, runners);
     }
 
-    private static Class[] scanForTestClasses(Class<?> suiteClass)
+    private static Class<?>[] scanForTestClasses(Class<?> suiteClass)
     {
         Annotation customTestCategoryAnnotation = null;
 
@@ -99,11 +117,11 @@ public class CategorizedTestSuiteRunner extends Suite
             }
         }
 
-        Set<Class> testClasses = new HashSet<>();
+        Set<Class<?>> testClasses = new HashSet<>();
 
         if (customTestCategoryAnnotation != null)
         {
-            Set<Class> candidateClasses = new HashSet<>();
+            Set<Class<?>> candidateClasses = new HashSet<>();
             candidateClasses.addAll(ANNOTATION_FINDER.findAnnotatedClasses(customTestCategoryAnnotation.annotationType()));
             processTests(testClasses, suiteClass, candidateClasses);
         }
@@ -111,18 +129,18 @@ public class CategorizedTestSuiteRunner extends Suite
         {
             processTests(testClasses, suiteClass, ALL_CLASSES_WITH_TEST_ANNOTATIONS);
         }
-        return testClasses.toArray(new Class[testClasses.size()]);
+        return testClasses.toArray(new Class<?>[0]);
     }
 
-    private static void processTests(Set<Class> testClasses, Class<?> suiteClass, Set<Class> candidateClasses)
+    private static void processTests(Set<Class<?>> testClasses, Class<?> suiteClass, Set<Class<?>> candidateClasses)
     {
-        for (Class classToAdd : candidateClasses)
+        for (Class<?> classToAdd : candidateClasses)
         {
             addClassIfNotRestricted(testClasses, suiteClass, classToAdd);
         }
     }
 
-    private static void addClassIfNotRestricted(Set<Class> testClasses, Class<?> suiteClass, Class<?> classToAdd)
+    private static void addClassIfNotRestricted(Set<Class<?>> testClasses, Class<?> suiteClass, Class<?> classToAdd)
     {
         RunWith runWithAnnotation = classToAdd.getAnnotation(RunWith.class);
 

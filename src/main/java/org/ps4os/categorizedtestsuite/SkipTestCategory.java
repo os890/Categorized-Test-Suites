@@ -16,13 +16,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.ps4os.categorizedtestsuite;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
+/**
+ * Suite-level annotation that excludes test classes bearing any of the specified
+ * category annotations from being included in the suite.
+ *
+ * <pre>{@code
+ * @C1
+ * @SkipTestCategory(Numbered.class)
+ * @RunWith(CategorizedTestSuiteRunner.class)
+ * public class Suite1WithoutNumbered {}
+ * }</pre>
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SkipTestCategory
 {
+    /**
+     * The category annotation types to exclude from the suite.
+     *
+     * @return array of annotation types whose presence on a test class causes it to be skipped
+     */
     Class<? extends Annotation>[] value();
 }

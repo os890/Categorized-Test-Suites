@@ -1,5 +1,15 @@
-target
+target/
+.idea/
 *.iml
 *.iws
 *.ipr
-.idea
+.project
+.classpath
+.settings/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+release.properties
+pom.xml.releaseBackup

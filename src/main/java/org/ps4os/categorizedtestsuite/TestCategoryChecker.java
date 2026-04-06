@@ -19,29 +19,27 @@
 
 package org.ps4os.categorizedtestsuite;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import jakarta.enterprise.context.ApplicationScoped;
+
+import java.lang.annotation.Annotation;
 
 /**
- * Suite-level annotation that restricts the suite to test classes that are
- * assignable from the specified base type.
+ * CDI bean that provides utility methods for inspecting test category annotations.
  *
- * <pre>{@code
- * @TestsOfType(BaseTest.class)
- * @RunWith(CategorizedTestSuiteRunner.class)
- * public class FullSuiteWithBaseTest {}
- * }</pre>
+ * <p>Inject this bean in CDI-managed environments to check whether an annotation
+ * type has been designated as a {@link TestCategory}.</p>
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface TestsOfType
+@ApplicationScoped
+public class TestCategoryChecker
 {
     /**
-     * The base type that candidate test classes must extend or implement.
+     * Checks whether the given annotation type is marked as a test category.
      *
-     * @return the required supertype
+     * @param annotationType the annotation type to inspect
+     * @return {@code true} if {@code annotationType} is itself annotated with {@link TestCategory}
      */
-    Class<?> value();
+    public boolean isCategoryAnnotation(Class<? extends Annotation> annotationType)
+    {
+        return annotationType.isAnnotationPresent(TestCategory.class);
+    }
 }

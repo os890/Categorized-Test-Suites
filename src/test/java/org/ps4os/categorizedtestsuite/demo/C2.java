@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.ps4os.categorizedtestsuite.demo;
 
 import org.ps4os.categorizedtestsuite.TestCategory;
@@ -25,8 +26,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Demo category annotation representing the second category group.
+ */
 @TestCategory
-
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface C2

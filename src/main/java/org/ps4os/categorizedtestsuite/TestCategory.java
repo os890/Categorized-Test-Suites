@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.ps4os.categorizedtestsuite;
 
 import java.lang.annotation.ElementType;
@@ -23,6 +24,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Meta-annotation that marks an annotation as a test category.
+ *
+ * <p>Apply this to any annotation type to designate it as a category
+ * that {@link CategorizedTestSuiteRunner} will recognize when filtering tests.</p>
+ *
+ * <pre>{@code
+ * @TestCategory
+ * @Target(ElementType.TYPE)
+ * @Retention(RetentionPolicy.RUNTIME)
+ * public @interface Nightly {}
+ * }</pre>
+ */
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TestCategory

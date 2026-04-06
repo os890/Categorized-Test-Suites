@@ -17,7 +17,9 @@
  * under the License.
  */
 
-package org.ps4os.categorizedtestsuite;
+package org.ps4os.categorizedtestsuite.cdise;
+
+import org.ps4os.categorizedtestsuite.TestCategory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -25,23 +27,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Suite-level annotation that restricts the suite to test classes that are
- * assignable from the specified base type.
- *
- * <pre>{@code
- * @TestsOfType(BaseTest.class)
- * @RunWith(CategorizedTestSuiteRunner.class)
- * public class FullSuiteWithBaseTest {}
- * }</pre>
+ * Sample test category annotation used in CDI SE tests to verify {@code @TestCategory} detection.
  */
+@TestCategory
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface TestsOfType
+@interface SampleTestCategory
 {
-    /**
-     * The base type that candidate test classes must extend or implement.
-     *
-     * @return the required supertype
-     */
-    Class<?> value();
 }
